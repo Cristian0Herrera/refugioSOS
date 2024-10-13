@@ -4,6 +4,12 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 trigger:
+- task: SonarQubePrepare@6
+  inputs:
+    SonarQube: 'refugio-sos-coneccion'
+    scannerMode: 'MSBuild'
+    projectKey: 'RefugioSOS_RefugioSOS_AZKDqtwW8jYy-B_AK8n8'
+    projectName: 'refugioSOS'
 - main
 
 pool:
