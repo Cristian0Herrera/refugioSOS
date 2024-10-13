@@ -70,9 +70,7 @@ class Login extends SimplePage
 
         $data = $this->form->getState();
 
-        if (! Filament::auth()->attempt($this->getCredentialsFromFormData($data), $data['remember'] ?? false)) {
-            $this->throwFailureValidationException();
-        }
+
 
         $user = Filament::auth()->user();
 
@@ -143,11 +141,7 @@ class Login extends SimplePage
             ->extraInputAttributes(['tabindex' => 2]);
     }
 
-    protected function getRememberFormComponent(): Component
-    {
-        return Checkbox::make('remember')
-            ->label(__('filament-panels::pages/auth/login.form.remember.label'));
-    }
+  
 
     public function registerAction(): Action
     {

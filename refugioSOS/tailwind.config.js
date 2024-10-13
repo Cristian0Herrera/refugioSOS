@@ -13,6 +13,10 @@ export default {
 
     theme: {
         extend: {
+            
+            colors: {
+                error: '#e3342f', // Aquí defines tu color personalizado
+            },
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },

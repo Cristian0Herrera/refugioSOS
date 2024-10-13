@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Voluntarios extends Model
 {
+    
     protected $fillable = [
         'nombre',
         'telefono',
@@ -17,4 +18,6 @@ class Voluntarios extends Model
         'fechaNacimiento',
         'observaciones',
     ];
+
+    
 }

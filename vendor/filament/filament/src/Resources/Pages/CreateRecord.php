@@ -39,7 +39,7 @@ class CreateRecord extends Page
 
     public ?string $previousUrl = null;
 
-    protected static bool $canCreateAnother = true;
+    protected static bool $canCreateAnother = false;
 
     public function getBreadcrumb(): string
     {

@@ -28,6 +28,11 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            'apellidos' => fake()->name(),
+            'DUI' => fake()->name(),
+            'lugar_de_nacimiento' => fake()->name(),
+            'genero' => fake()->name(),
+            'fecha_de_nacimiento' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => '$2y$12$HOnbJP.OpyTS6LhUSlGVjuSyskpgTDxGD2mnp/wqImtzv20uQXE8i',

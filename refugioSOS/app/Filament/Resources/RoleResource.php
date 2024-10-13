@@ -14,37 +14,35 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Spatie\Permission\Models\Role;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 
-
-
-class RoleResource extends Resource
+class RoleResource extends Resource implements HasShieldPermissions
 {
+    public static function getPermissionPrefixes(): array
+    {
+        return [
+            'view_any',
+            'create',
+            'update',
+            'delete',
+            'delete_any', 
+            ];
+    }
     protected static ?string $model = Role::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-square-3-stack-3d';
     protected static ?string $navigationGroup = 'Administración';
-
-
+    public static ?string $navigationLabel = 'Roles';
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
 
-                TextInput::make('Nombre')
-                ->minLength(2)
-                ->maxLength(255)
-                
             ]);
     }
-
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('Nombre')
-                ->searchable(),
-
-                
             ])
             ->filters([
                 //

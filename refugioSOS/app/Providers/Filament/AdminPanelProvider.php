@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\EditProfile;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -19,7 +20,11 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Infolists\Components\TextEntry;
 
-
+use App\Filament\Widgets\SalesChart;
+use App\Filament\Widgets\RefugiadosChart;
+use App\Filament\Widgets\RefugiadossChart;
+use App\Filament\Widgets\TestWidget;
+use App\Filament\Widgets\AdministradoresWidget;
 
 
 class AdminPanelProvider extends PanelProvider
@@ -27,27 +32,33 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-        ->darkMode(true)
+       // ->darkMode(true)
         ->brandName('RefugioSOS')
             ->default()
             ->id('admin')
             ->path('admin')
             ->login()
+            ->profile(EditProfile::class)
             ->colors([
                
 
-                'danger' => Color::Blue,
+                'danger' => Color::Red,
                 'gray' => Color::Blue,
                 'info' => Color::Blue,
                 'primary' => Color::Slate,
-                'success' => Color::Emerald,
-                'warning' => Color::Gray,
+                'success' => Color::Green,
+                'warning' => Color::Red,
                 ])
             ->font('Poppins')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Pages\Dashboard::class,
+            ])
+            ->widgets([
+                RefugiadosChart::class, // Registro del widget
+                RefugiadossChart::class, // Registro del widget
+             /* TestWidget::class, // Registro del widget */
             ])
             
             ->middleware([
@@ -63,7 +74,15 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+
+            ->plugins([
+                \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make()
+            ])
+            
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('2s')
+            ;
 
            
 

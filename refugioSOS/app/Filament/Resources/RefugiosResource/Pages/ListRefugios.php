@@ -9,11 +9,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListRefugios extends ListRecords
 {
     protected static string $resource = RefugiosResource::class;
+    protected static bool $canCreateAnother = false;
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\CreateAction::make(),
-        ];
-    }
+      
 }

@@ -5,3 +5,7 @@
 [x-cloak] {
     display: none;
 }
+.input-error-message {
+    @apply text-error font-semibold;
+}
+

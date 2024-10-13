@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\PdfController;
 use Illuminate\Support\Facades\Route;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -15,3 +18,5 @@ Route::middleware([
         return view('dashboard');
     })->name('dashboard');
 });
+
+Route::get('/pdf/generate/refugiados', [PdfController::class, 'RefugiadosRecords'])->name('pdf.example');
