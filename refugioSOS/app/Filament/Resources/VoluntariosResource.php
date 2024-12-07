@@ -44,13 +44,11 @@ class VoluntariosResource extends Resource implements HasShieldPermissions
                 ->reactive()
                 ->validationMessages([
                     'required' => 'Este campo es obligatorio, por favor complételo.',
-                    'filled' => 'Este campo no puede estar vacío, por favor complételo.',
-                    'alpha' => 'Solo se permiten letras',
                     
-                ])
-                ->extraAttributes([
-                    'class' => 'custom-error'
-                ]), 
+                    
+                ]),
+                
+                
                 Forms\Components\TextInput::make('telefono') ->label('Teléfono')
                 ->required(true)
                 ->filled(true)

@@ -164,7 +164,17 @@ class Register extends SimplePage
             ->rule(Password::default())
             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
             ->same('passwordConfirmation')
-            ->validationAttribute(__('filament-panels::pages/auth/register.form.password.validation_attribute'));
+            ->validationAttribute(__('filament-panels::pages/auth/register.form.password.validation_attribute'))
+            ->validationMessages([
+                'min' => [
+        'array' => 'El campo :atributo debe tener al menos :min elementos',
+        'file' => 'El campo :attribute debe tener al menos :min kilobytes.',
+        'numeric' => 'El campo :atributo debe tener al menos :min.',
+        'string' => 'El campo :atributo debe tener al menos :min caracteres.', ],
+                
+                
+            ]);
+
     }
 
     protected function getPasswordConfirmationFormComponent(): Component
@@ -174,7 +184,16 @@ class Register extends SimplePage
             ->password()
             ->revealable(filament()->arePasswordsRevealable())
             ->required()
-            ->dehydrated(false);
+            ->dehydrated(false)
+            ->validationMessages([
+                'min' => [
+        'array' => 'El campo :atributo debe tener al menos :min elementos',
+        'file' => 'El campo :attribute debe tener al menos :min kilobytes.',
+        'numeric' => 'El campo :atributo debe tener al menos :min.',
+        'string' => 'El campo :atributo debe tener al menos :min caracteres.', ],
+                
+                
+            ]);
     }
 
     public function loginAction(): Action

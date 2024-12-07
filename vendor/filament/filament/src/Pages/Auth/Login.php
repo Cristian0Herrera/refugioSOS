@@ -92,6 +92,7 @@ class Login extends SimplePage
     {
         throw ValidationException::withMessages([
             'data.email' => __('filament-panels::pages/auth/login.messages.failed'),
+            'data.password' => __('filament-panels::pages/auth/login.messages.failed'),
         ]);
     }
 
@@ -135,6 +136,7 @@ class Login extends SimplePage
             ->label(__('filament-panels::pages/auth/login.form.password.label'))
             ->hint(filament()->hasPasswordReset() ? new HtmlString(Blade::render('<x-filament::link :href="filament()->getRequestPasswordResetUrl()"> {{ __(\'filament-panels::pages/auth/login.actions.request_password_reset.label\') }}</x-filament::link>')) : null)
             ->password()
+            ->same('password')
             ->revealable(filament()->arePasswordsRevealable())
             ->autocomplete('current-password')
             ->required()

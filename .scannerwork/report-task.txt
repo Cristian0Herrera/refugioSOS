@@ -1,6 +1,6 @@
-projectKey=refugioSOS
+projectKey=MiApp
 serverUrl=http://localhost:9000
 serverVersion=9.9.7.96285
-dashboardUrl=http://localhost:9000/dashboard?id=refugioSOS
-ceTaskId=AZJjz7G2UIwJLhgXYRDK
-ceTaskUrl=http://localhost:9000/api/ce/task?id=AZJjz7G2UIwJLhgXYRDK
+dashboardUrl=http://localhost:9000/dashboard?id=MiApp
+ceTaskId=AZKMw5QO8jYy-B_AK8oV
+ceTaskUrl=http://localhost:9000/api/ce/task?id=AZKMw5QO8jYy-B_AK8oV
