@@ -30,5 +30,5 @@ RUN mkdir -p /app/storage/logs
 
 RUN php artisan octane:install --server="swoole"
 
-CMD php artisan octane:start --server="swoole" --host="0.0.0.0" --port=9000
-EXPOSE 9000
+CMD php artisan octane:start --server="swoole" --host="0.0.0.0" --port=8000
+EXPOSE 8000
