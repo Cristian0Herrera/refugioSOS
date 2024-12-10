@@ -12,36 +12,53 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns;
-use Filament\Pages\SimplePage;
+use Filament\Pages\Page;
 use Filament\Panel;
 use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Support\Exceptions\Halt;
 use Filament\Support\Facades\FilamentView;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rules\Password;
+use Throwable;
 
 use function Filament\Support\is_app_url;
 
 /**
  * @property Form $form
  */
-class EditProfile extends SimplePage
+class EditProfile extends Page
 {
-    use Concerns\HasRoutes;
     use Concerns\InteractsWithFormActions;
-
-    /**
-     * @var view-string
-     */
-    protected static string $view = 'filament-panels::pages.auth.edit-profile';
 
     /**
      * @var array<string, mixed> | null
      */
     public ?array $data = [];
+
+    protected ?string $maxWidth = null;
+
+    protected static bool $isDiscovered = false;
+
+    public function getLayout(): string
+    {
+        return static::$layout ?? (static::isSimple() ? 'filament-panels::components.layout.simple' : 'filament-panels::components.layout.index');
+    }
+
+    public static function isSimple(): bool
+    {
+        return Filament::isProfilePageSimple();
+    }
+
+    public function getView(): string
+    {
+        return static::$view ?? 'filament-panels::pages.auth.edit-profile';
+    }
 
     public static function getLabel(): string
     {
@@ -87,6 +104,26 @@ class EditProfile extends SimplePage
         $this->callHook('afterFill');
     }
 
+    public static function registerRoutes(Panel $panel): void
+    {
+        if (filled(static::getCluster())) {
+            Route::name(static::prependClusterRouteBaseName(''))
+                ->prefix(static::prependClusterSlug(''))
+                ->group(fn () => static::routes($panel));
+
+            return;
+        }
+
+        static::routes($panel);
+    }
+
+    public static function getRouteName(?string $panel = null): string
+    {
+        $panel = $panel ? Filament::getPanel($panel) : Filament::getCurrentPanel();
+
+        return $panel->generateRouteName('auth.' . static::getRelativeRouteName());
+    }
+
     /**
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
@@ -108,6 +145,8 @@ class EditProfile extends SimplePage
     public function save(): void
     {
         try {
+            DB::beginTransaction();
+
             $this->callHook('beforeValidate');
 
             $data = $this->form->getState();
@@ -121,8 +160,18 @@ class EditProfile extends SimplePage
             $this->handleRecordUpdate($this->getUser(), $data);
 
             $this->callHook('afterSave');
+
+            DB::commit();
         } catch (Halt $exception) {
+            $exception->shouldRollbackDatabaseTransaction() ?
+                DB::rollBack() :
+                DB::commit();
+
             return;
+        } catch (Throwable $exception) {
+            DB::rollBack();
+
+            throw $exception;
         }
 
         if (request()->hasSession() && array_key_exists('password', $data)) {
@@ -183,6 +232,14 @@ class EditProfile extends SimplePage
             ->autofocus();
     }
 
+    protected function getApellidoFormComponent(): Component
+    {
+        return TextInput::make('apellidos')
+            ->label(__('Apellido'))
+            ->required()
+            ->maxLength(255)
+            ->autofocus();
+    }
     protected function getEmailFormComponent(): Component
     {
         return TextInput::make('email')
@@ -233,13 +290,15 @@ class EditProfile extends SimplePage
                 $this->makeForm()
                     ->schema([
                         $this->getNameFormComponent(),
+                        $this->getApellidoFormComponent(),
                         $this->getEmailFormComponent(),
                         $this->getPasswordFormComponent(),
                         $this->getPasswordConfirmationFormComponent(),
                     ])
                     ->operation('edit')
                     ->model($this->getUser())
-                    ->statePath('data'),
+                    ->statePath('data')
+                    ->inlineLabel(! static::isSimple()),
             ),
         ];
     }
@@ -302,5 +361,17 @@ class EditProfile extends SimplePage
             ->label(__('filament-panels::pages/auth/edit-profile.actions.cancel.label'))
             ->url(filament()->getUrl())
             ->color('gray');
+    }
+
+    protected function getLayoutData(): array
+    {
+        return [
+            'maxWidth' => $this->getMaxWidth(),
+        ];
+    }
+
+    public function getMaxWidth(): MaxWidth | string | null
+    {
+        return $this->maxWidth;
     }
 }

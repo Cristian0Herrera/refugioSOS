@@ -18,8 +18,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
-use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
@@ -33,6 +33,7 @@ use function Filament\Support\generate_search_term_expression;
 class Select extends Field implements Contracts\CanDisableOptions, Contracts\HasAffixActions, Contracts\HasNestedRecursiveValidationRules
 {
     use Concerns\CanAllowHtml;
+    use Concerns\CanBeNative;
     use Concerns\CanBePreloaded;
     use Concerns\CanBeSearchable;
     use Concerns\CanDisableOptions;
@@ -45,6 +46,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     use Concerns\HasLoadingMessage;
     use Concerns\HasNestedRecursiveValidationRules;
     use Concerns\HasOptions;
+    use Concerns\HasPivotData;
     use Concerns\HasPlaceholder;
     use HasExtraAlpineAttributes;
 
@@ -82,8 +84,6 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     protected ?Model $cachedSelectedRecord = null;
 
     protected bool | Closure $isMultiple = false;
-
-    protected bool | Closure $isNative = true;
 
     protected ?Closure $getOptionLabelUsing = null;
 
@@ -552,13 +552,6 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         return $this;
     }
 
-    public function native(bool | Closure $condition = true): static
-    {
-        $this->isNative = $condition;
-
-        return $this;
-    }
-
     public function position(string | Closure | null $position): static
     {
         $this->position = $position;
@@ -694,25 +687,24 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         return (bool) $this->evaluate($this->isMultiple);
     }
 
-    public function isNative(): bool
-    {
-        return (bool) $this->evaluate($this->isNative);
-    }
-
     public function isSearchable(): bool
     {
         return $this->evaluate($this->isSearchable) || $this->isMultiple();
     }
 
-    public function relationship(string | Closure | null $name = null, string | Closure | null $titleAttribute = null, ?Closure $modifyQueryUsing = null): static
+    public function relationship(string | Closure | null $name = null, string | Closure | null $titleAttribute = null, ?Closure $modifyQueryUsing = null, bool $ignoreRecord = false): static
     {
         $this->relationship = $name ?? $this->getName();
         $this->relationshipTitleAttribute = $titleAttribute;
 
-        $this->getSearchResultsUsing(static function (Select $component, ?string $search) use ($modifyQueryUsing): array {
+        $this->getSearchResultsUsing(static function (Select $component, ?string $search) use ($modifyQueryUsing, $ignoreRecord): array {
             $relationship = Relation::noConstraints(fn () => $component->getRelationship());
 
             $relationshipQuery = app(RelationshipJoiner::class)->prepareQueryForNoConstraints($relationship);
+
+            if ($ignoreRecord && ($record = $component->getRecord())) {
+                $relationshipQuery->where($record->getQualifiedKeyName(), '!=', $record->getKey());
+            }
 
             if ($modifyQueryUsing) {
                 $relationshipQuery = $component->evaluate($modifyQueryUsing, [
@@ -763,7 +755,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
                 ->toArray();
         });
 
-        $this->options(static function (Select $component) use ($modifyQueryUsing): ?array {
+        $this->options(static function (Select $component) use ($modifyQueryUsing, $ignoreRecord): ?array {
             if (($component->isSearchable()) && ! $component->isPreloaded()) {
                 return null;
             }
@@ -771,6 +763,10 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             $relationship = Relation::noConstraints(fn () => $component->getRelationship());
 
             $relationshipQuery = app(RelationshipJoiner::class)->prepareQueryForNoConstraints($relationship);
+
+            if ($ignoreRecord && ($record = $component->getRecord())) {
+                $relationshipQuery->where($record->getQualifiedKeyName(), '!=', $record->getKey());
+            }
 
             if ($modifyQueryUsing) {
                 $relationshipQuery = $component->evaluate($modifyQueryUsing, [
@@ -834,7 +830,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             }
 
             if (
-                ($relationship instanceof HasOneThrough) ||
+                ($relationship instanceof HasManyThrough) ||
                 ($relationship instanceof \Znck\Eloquent\Relations\BelongsToThrough)
             ) {
                 $relatedModel = $relationship->getResults();
@@ -957,13 +953,30 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         $this->saveRelationshipsUsing(static function (Select $component, Model $record, $state) {
             $relationship = $component->getRelationship();
 
+            if (
+                ($relationship instanceof HasOneOrMany) ||
+                ($relationship instanceof HasManyThrough) ||
+                ($relationship instanceof \Znck\Eloquent\Relations\BelongsToThrough)
+            ) {
+                return;
+            }
+
             if (! $relationship instanceof BelongsToMany) {
                 $relationship->associate($state);
+                $record->wasRecentlyCreated && $record->save();
 
                 return;
             }
 
-            $relationship->sync($state ?? []);
+            $pivotData = $component->getPivotData();
+
+            if ($pivotData === []) {
+                $relationship->sync($state ?? []);
+
+                return;
+            }
+
+            $relationship->syncWithPivotValues($state ?? [], $pivotData);
         });
 
         $this->createOptionUsing(static function (Select $component, array $data, Form $form) {
@@ -1063,7 +1076,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         return parent::getLabel();
     }
 
-    public function getRelationship(): BelongsTo | BelongsToMany | HasOneOrMany | HasOneThrough | \Znck\Eloquent\Relations\BelongsToThrough | null
+    public function getRelationship(): BelongsTo | BelongsToMany | HasOneOrMany | HasManyThrough | \Znck\Eloquent\Relations\BelongsToThrough | null
     {
         if (blank($this->getRelationshipName())) {
             return null;
@@ -1188,7 +1201,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             return $relationship->getQualifiedRelatedKeyName();
         }
 
-        if ($relationship instanceof HasOneThrough) {
+        if ($relationship instanceof HasManyThrough) {
             return $relationship->getQualifiedForeignKeyName();
         }
 

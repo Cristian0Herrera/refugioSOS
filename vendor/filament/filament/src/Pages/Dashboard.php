@@ -7,7 +7,6 @@ use Filament\Support\Facades\FilamentIcon;
 use Filament\Widgets\Widget;
 use Filament\Widgets\WidgetConfiguration;
 use Illuminate\Contracts\Support\Htmlable;
-use App\Filament\Widgets\MapalWidget;
 
 class Dashboard extends Page
 {

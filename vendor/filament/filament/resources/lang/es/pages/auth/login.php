@@ -4,7 +4,7 @@ return [
 
     'title' => 'Acceso',
 
-    'heading' => 'Entre a su cuenta',
+    'heading' => 'Iniciar sesión',
 
     'actions' => [
 
@@ -14,7 +14,7 @@ return [
         ],
 
         'request_password_reset' => [
-            'label' => '¿Ha olvidado su contraseña?',
+            'label' => '¿Olvidaste tu contraseña?',
         ],
 
     ],
@@ -30,7 +30,7 @@ return [
         ],
 
         'remember' => [
-            'label' => 'Recordarme',
+            'label' => '  ',
         ],
 
         'actions' => [
@@ -43,9 +43,11 @@ return [
 
     ],
 
+    
     'messages' => [
 
-        'failed' => 'Estas credenciales no coinciden con nuestros registros.',
+        'email' => 'Correo electrónico no válido',
+        'password' => 'Contraseña incorrecta',
 
     ],
 

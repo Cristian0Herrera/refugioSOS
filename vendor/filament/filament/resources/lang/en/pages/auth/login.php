@@ -10,11 +10,11 @@ return [
 
         'register' => [
             'before' => 'or',
-            'label' => 'Crear una cuenta',
+            'label' => 'sign up for an account',
         ],
 
         'request_password_reset' => [
-            'label' => 'Forgotten your password?',
+            'label' => 'Forgot password?',
         ],
 
     ],

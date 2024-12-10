@@ -358,15 +358,17 @@ return [
 
                 'modal' => [
 
-                    'heading' => 'Agregar nuevo',
+                    'heading' => 'Create',
 
                     'actions' => [
 
                         'create' => [
-                            'label' => 'Agregar nuevo',
+                            'label' => 'Create',
                         ],
 
-                       
+                        'create_another' => [
+                            'label' => 'Create & create another',
+                        ],
 
                     ],
 

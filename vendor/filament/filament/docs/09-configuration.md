@@ -30,7 +30,7 @@ php artisan make:filament-panel app
 
 This command will create a new panel called "app". A configuration file will be created at `app/Providers/Filament/AppPanelProvider.php`. You can access this panel at `/app`, but you can [customize the path](#changing-the-path) if you don't want that.
 
-Since this configuration file is also a [Laravel service provider](https://laravel.com/docs/providers), it needs to be registered in `config/app.php`. Filament will attempt to do this for you, but if you get an error while trying to access your panel then this process has probably failed. You can manually register the service provider by adding it to the `providers` array.
+Since this configuration file is also a [Laravel service provider](https://laravel.com/docs/providers), it needs to be registered in `bootstrap/providers.php` (Laravel 11 and above) or `config/app.php` (Laravel 10 and below). Filament will attempt to do this for you, but if you get an error while trying to access your panel then this process has probably failed.
 
 ## Changing the path
 
@@ -68,6 +68,7 @@ Make sure your `routes/web.php` file doesn't already define the `''` or `'/'` ro
 
 ```php
 use Filament\Panel;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
 
 public function panel(Panel $panel): Panel
@@ -75,7 +76,7 @@ public function panel(Panel $panel): Panel
     return $panel
         // ...
         ->renderHook(
-            'panels::body.start',
+            PanelsRenderHook::BODY_START,
             fn (): string => Blade::render('@livewire(\'livewire-ui-modal\')'),
         );
 }
@@ -163,6 +164,26 @@ public function panel(Panel $panel): Panel
 
 > Please note: this feature is not compatible with [SPA mode](#spa-mode).
 
+## Registering assets for a panel
+
+You can register [assets](../support/assets) that will only be loaded on pages within a specific panel, and not in the rest of the app. To do that, pass an array of assets to the `assets()` method:
+
+```php
+use Filament\Panel;
+use Filament\Support\Assets\Css;
+use Filament\Support\Assets\Js;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        // ...
+        ->assets([
+            Css::make('custom-stylesheet', resource_path('css/custom.css')),
+            Js::make('custom-script', resource_path('js/custom.js')),
+        ]);
+}
+```
+
 ## Applying middleware
 
 You can apply extra middleware to all routes by passing an array of middleware classes to the `middleware()` method in the configuration:
@@ -189,7 +210,7 @@ public function panel(Panel $panel): Panel
 {
     return $panel
         // ...
-        ->tenantMiddleware([
+        ->middleware([
             // ...
         ], isPersistent: true);
 }

@@ -9,5 +9,4 @@ use Filament\Actions\CreateAction as BaseAction;
  */
 class CreateAction extends BaseAction
 {
-    
 }

@@ -1,6 +1,7 @@
 <?php
 
 namespace Filament\Forms\Components;
+
 class Field extends Component implements Contracts\HasHintActions, Contracts\HasValidationRules
 {
     use Concerns\CanBeAutofocused;
@@ -9,8 +10,6 @@ class Field extends Component implements Contracts\HasHintActions, Contracts\Has
     use Concerns\HasHelperText;
     use Concerns\HasHint;
     use Concerns\HasName;
-
-    protected string $view ='user';
 
     protected string $viewIdentifier = 'field';
 

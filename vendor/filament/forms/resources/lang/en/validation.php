@@ -8,7 +8,6 @@ return [
         'alpha' => 'El campo :attribute solo puede contener letras.',
 
     ],
-    'alpha' => 'El campo :attribute solo puede contener letras.',
 
     'min' => [
         'numeric' => 'El :attribute debe ser al menos :min.',

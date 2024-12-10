@@ -22,6 +22,7 @@ use Illuminate\Auth\SessionGuard;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
@@ -74,9 +75,11 @@ class Register extends SimplePage
             return null;
         }
 
-        $data = $this->form->getState();
+        $user = DB::transaction(function () {
+            $data = $this->form->getState();
 
-        $user = $this->getUserModel()::create($data);
+            return $this->getUserModel()::create($data);
+        });
 
         event(new Registered($user));
 
@@ -140,8 +143,13 @@ class Register extends SimplePage
         return TextInput::make('name')
             ->label(__('filament-panels::pages/auth/register.form.name.label'))
             ->required()
-            ->maxLength(255)
-            ->autofocus();
+            ->maxLength(50)
+            ->autofocus()
+            ->validationMessages([
+                'required' => 'Este campo es obligatorio, por favor complételo.',
+                'filled' => 'Este campo no puede estar vacío, por favor complételo.',
+                
+                ]);
     }
 
     protected function getEmailFormComponent(): Component
@@ -151,7 +159,12 @@ class Register extends SimplePage
             ->email()
             ->required()
             ->maxLength(255)
-            ->unique($this->getUserModel());
+            ->unique($this->getUserModel())
+            ->validationMessages([
+                'unique' => 'Este correo electrónico ya está en uso. Intenta con otro.',
+                'required' => 'Este campo es obligatorio, por favor complételo.',
+                'email.regex' => 'El campo :attribute debe ser una dirección de correo electrónico válida',
+            ]);
     }
 
     protected function getPasswordFormComponent(): Component
@@ -163,20 +176,29 @@ class Register extends SimplePage
             ->required()
             ->rule(Password::default())
             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
-            ->same('passwordConfirmation')
             ->validationAttribute(__('filament-panels::pages/auth/register.form.password.validation_attribute'))
             ->validationMessages([
-                'min' => [
-        'array' => 'El campo :atributo debe tener al menos :min elementos',
-        'file' => 'El campo :attribute debe tener al menos :min kilobytes.',
-        'numeric' => 'El campo :atributo debe tener al menos :min.',
-        'string' => 'El campo :atributo debe tener al menos :min caracteres.', ],
+
+              
+                    'letters' => 'El campo :attribute debe contener al menos una letra.',
+                    'mixed' => 'El campo :attribute debe contener al menos una letra mayúscula y una minúscula.',
+                    'numbers' => 'El campo :attribute debe contener al menos un número.',
+                    'symbols' => 'El campo :attribute debe contener al menos un símbolo.',
+                    'uncompromised' => 'El :attribute proporcionado ha aparecido en una filtración de datos. Por favor, elige un :attribute diferente.',
                 
+
+                'required' => 'Este campo es obligatorio, por favor complételo.',
+                'min' => [
+                    'array' => 'El campo :attribute debe tener al menos :min elementos',
+                    'file' => 'El campo :attribute debe tener al menos :min kilobytes.',
+                    'numeric' => 'El campo :attribute debe tener al menos :min.',
+                    'string' => 'El campo :attribute debe tener al menos :min caracteres.',
+                ],
+
                 
             ]);
-
     }
-
+    
     protected function getPasswordConfirmationFormComponent(): Component
     {
         return TextInput::make('passwordConfirmation')
@@ -184,14 +206,26 @@ class Register extends SimplePage
             ->password()
             ->revealable(filament()->arePasswordsRevealable())
             ->required()
+            ->same('password') // Cambiar la regla `same` aquí para verificar contra el campo 'password'
             ->dehydrated(false)
+            ->validationAttribute(__('filament-panels::pages/auth/register.form.password_confirmation.validation_attribute'))
             ->validationMessages([
+                'same' => 'El campo "Confirmar contraseña" debe coincidir con el campo "Contraseña"',
                 'min' => [
-        'array' => 'El campo :atributo debe tener al menos :min elementos',
-        'file' => 'El campo :attribute debe tener al menos :min kilobytes.',
-        'numeric' => 'El campo :atributo debe tener al menos :min.',
-        'string' => 'El campo :atributo debe tener al menos :min caracteres.', ],
-                
+                    'array' => 'El campo :attribute debe tener al menos :min elementos',
+                    'file' => 'El campo :attribute debe tener al menos :min kilobytes.',
+                    'numeric' => 'El campo :attribute debe tener al menos :min.',
+                    'string' => 'El campo :attribute debe tener al menos :min caracteres.',
+                ],
+                'required' => 'Este campo es obligatorio, por favor complételo.',
+
+                'password' => [
+                    'letters' => 'El campo :attribute debe contener al menos una letra.',
+                    'mixed' => 'El campo :attribute debe contener al menos una letra mayúscula y una minúscula.',
+                    'numbers' => 'El campo :attribute debe contener al menos un número.',
+                    'symbols' => 'El campo :attribute debe contener al menos un símbolo.',
+                ],
+
                 
             ]);
     }

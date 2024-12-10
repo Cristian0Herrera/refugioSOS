@@ -70,29 +70,43 @@ class Login extends SimplePage
 
         $data = $this->form->getState();
 
+        // Buscar el usuario por correo electrónico
+    $user = Filament::auth()->getProvider()->retrieveByCredentials(['email' => $data['email']]);
 
+    if (! $user) {
+        // Si el correo electrónico no existe
+        throw ValidationException::withMessages([
+            'data.email' => __('filament-panels::pages/auth/login.messages.email'),
+        ]);
+    }
 
-        $user = Filament::auth()->user();
+    // Verificar si la contraseña es incorrecta
+    if (! Filament::auth()->getProvider()->validateCredentials($user, ['password' => $data['password']])) {
+        throw ValidationException::withMessages([
+            'data.password' => __('filament-panels::pages/auth/login.messages.password'),
+        ]);
+    }
 
-        if (
-            ($user instanceof FilamentUser) &&
-            (! $user->canAccessPanel(Filament::getCurrentPanel()))
-        ) {
-            Filament::auth()->logout();
+    if (
+        ($user instanceof FilamentUser) &&
+        (! $user->canAccessPanel(Filament::getCurrentPanel()))
+    ) {
+        Filament::auth()->logout();
 
-            $this->throwFailureValidationException();
-        }
+        $this->throwFailureValidationException();
+    }
 
-        session()->regenerate();
+    Filament::auth()->login($user, true);
+    session()->regenerate();
 
-        return app(LoginResponse::class);
+    return app(LoginResponse::class);
     }
 
     protected function throwFailureValidationException(): never
     {
         throw ValidationException::withMessages([
-            'data.email' => __('filament-panels::pages/auth/login.messages.failed'),
-            'data.password' => __('filament-panels::pages/auth/login.messages.failed'),
+            'data.email' => __('filament-panels::pages/auth/login.messages.email'),
+            'data.password' => __('filament-panels::pages/auth/login.messages.password'),
         ]);
     }
 
@@ -136,14 +150,17 @@ class Login extends SimplePage
             ->label(__('filament-panels::pages/auth/login.form.password.label'))
             ->hint(filament()->hasPasswordReset() ? new HtmlString(Blade::render('<x-filament::link :href="filament()->getRequestPasswordResetUrl()"> {{ __(\'filament-panels::pages/auth/login.actions.request_password_reset.label\') }}</x-filament::link>')) : null)
             ->password()
-            ->same('password')
             ->revealable(filament()->arePasswordsRevealable())
             ->autocomplete('current-password')
             ->required()
             ->extraInputAttributes(['tabindex' => 2]);
     }
 
-  
+    protected function getRememberFormComponent(): Component
+    {
+        return Checkbox::make('remember')
+            ->label(__('filament-panels::pages/auth/login.form.remember.label'));
+    }
 
     public function registerAction(): Action
     {

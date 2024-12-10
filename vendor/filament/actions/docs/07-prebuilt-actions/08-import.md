@@ -67,8 +67,6 @@ If you'd like to save time, Filament can automatically generate the [columns](#d
 php artisan make:filament-importer Product --generate
 ```
 
-> If your table contains ENUM columns, the `doctrine/dbal` package we use is unable to scan your table and will crash. Hence, Filament is unable to generate the columns for your importer if it contains an ENUM column. Read more about this issue [here](https://github.com/doctrine/dbal/issues/3819#issuecomment-573419808).
-
 ## Defining importer columns
 
 To define the columns that can be imported, you need to override the `getColumns()` method on your importer class, returning an array of `ImportColumn` objects:
@@ -320,6 +318,18 @@ ImportColumn::make('sku')
     })
 ```
 
+### Adding helper text below the import column
+
+Sometimes, you may wish to provide extra information for the user before validation. You can do this by adding `helperText()` to a column, which gets displayed below the mapping select:
+
+```php
+use Filament\Forms\Components\TextInput;
+
+ImportColumn::make('skus')
+    ->array(',')
+    ->helperText('A comma-separated list of SKUs.')
+```
+
 ## Updating existing records when importing
 
 When generating an importer class, you will see this `resolveRecord()` method:
@@ -446,6 +456,15 @@ ImportColumn::make('sku')
     ->example('ABC123')
 ```
 
+By default, the name of the column is used in the header of the example CSV. You can customize the header per-column using `exampleHeader()`:
+
+```php
+use Filament\Actions\Imports\ImportColumn;
+
+ImportColumn::make('sku')
+    ->exampleHeader('SKU')
+```
+
 ## Using a custom user model
 
 By default, the `imports` table has a `user_id` column. That column is constrained to the `users` table:
@@ -525,7 +544,7 @@ The default job for processing imports is `Filament\Actions\Imports\Jobs\ImportC
 
 ```php
 use App\Jobs\ImportCsv;
-use Filament\Actions\Imports\Jobs\ImportCsv::class as BaseImportCsv;
+use Filament\Actions\Imports\Jobs\ImportCsv as BaseImportCsv;
 
 $this->app->bind(BaseImportCsv::class, ImportCsv::class);
 ```
@@ -582,7 +601,7 @@ By default, the import system will retry a job for 24 hours. This is to allow fo
 ```php
 use Carbon\CarbonInterface;
 
-public function getJobRetryUntil(): CarbonInterface
+public function getJobRetryUntil(): ?CarbonInterface
 {
     return now()->addDay();
 }
@@ -602,6 +621,17 @@ public function getJobTags(): array
 ```
 
 If you'd like to customize the tags that are applied to jobs of a certain importer, you may override this method in your importer class.
+
+### Customizing the import job batch name
+
+By default, the import system doesn't define any name for the job batches. If you'd like to customize the name that is applied to job batches of a certain importer, you may override the `getJobBatchName()` method in your importer class:
+
+```php
+public function getJobBatchName(): ?string
+{
+    return 'product-import';
+}
+```
 
 ## Customizing import validation messages
 
@@ -706,3 +736,30 @@ class ProductImporter extends Importer
 Inside these hooks, you can access the current row's data using `$this->data`. You can also access the original row of data from the CSV, before it was [cast](#casting-state) or mapped, using `$this->originalData`.
 
 The current record (if it exists yet) is accessible in `$this->record`, and the [import form options](#using-import-options) using `$this->options`.
+
+## Authorization
+
+By default, only the user who started the import may access the failure CSV file that gets generated if part of an import fails. If you'd like to customize the authorization logic, you may create an `ImportPolicy` class, and [register it in your `AuthServiceProvider`](https://laravel.com/docs/10.x/authorization#registering-policies):
+
+```php
+use App\Policies\ImportPolicy;
+use Filament\Actions\Imports\Models\Import;
+
+protected $policies = [
+    Import::class => ImportPolicy::class,
+];
+```
+
+The `view()` method of the policy will be used to authorize access to the failure CSV file.
+
+Please note that if you define a policy, the existing logic of ensuring only the user who started the import can access the failure CSV file will be removed. You will need to add that logic to your policy if you want to keep it:
+
+```php
+use App\Models\User;
+use Filament\Actions\Imports\Models\Import;
+
+public function view(User $user, Import $import): bool
+{
+    return $import->user()->is($user);
+}
+```

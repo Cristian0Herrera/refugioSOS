@@ -13,9 +13,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 
 class CreateAction extends Action
 {
-    
     use CanCustomizeProcess;
-    
 
     protected bool | Closure $canCreateAnother = true;
 
@@ -48,6 +46,8 @@ class CreateAction extends Action
         $this->groupedIcon(FilamentIcon::resolve('actions::create-action.grouped') ?? 'heroicon-m-plus');
 
         $this->record(null);
+
+        $this->databaseTransaction();
 
         $this->action(function (array $arguments, Form $form): void {
             $model = $this->getModel();
